@@ -1,0 +1,322 @@
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../../bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="../../bower_components/iron-list/iron-list.html">
+<link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../../bower_components/paper-input/paper-input.html">
+
+
+<dom-module id="githubpoly-github">
+    <template>
+    
+	<style>
+	:root {
+	/* Label and underline color when the input is not focused */
+        --paper-input-container-color: #979A9A;
+
+        /* Label and underline color when the input is focused */
+        --paper-input-container-focus-color: #154360;
+
+        /* Label and underline color when the input is invalid */
+        --paper-input-container-invalid-color: green;
+
+        /* Input foreground color */
+        --paper-input-container-input-color: #154360;
+	}
+	
+	:host {
+        display: block;
+        border: 1px solid #efefef;
+        padding: 1%;
+        border-radius: 0px;
+        box-shadow: 2px 2px 2px #ccc;
+        background-color: #fff;
+    }
+	
+	#container {
+		display: flex;
+	}
+  
+	.loginScreen{
+		width: 450px;
+		background-color: #EAF2F8;
+		border-radius: 10px;
+		box-shadow: 2px 2px 2px #ccc;
+		min-height: 270px;
+		max-height: 290px;
+	}
+	
+	.resultScreen{
+		display: [[resultScreen]];
+		margin-left: 1%;
+		padding: 30px 30px;
+		width: 800px;
+		background-color: #EAF2F8;
+		border-radius: 10px;
+		box-shadow: 2px 2px 2px #ccc;
+	}
+    
+	paper-input{
+		margin-left: 6%;
+		width: 390px;
+	}
+    
+	iron-icon{
+        margin-right: 15px;
+		transition: all .2s linear;
+    }
+	
+	iron-icon:hover{
+		color: #fff;
+	}
+	
+    img{
+        width:20%;
+        margin-bottom: 3%;
+		border-radius: 50%;
+		border: 2px solid black;
+		object-position: fit;
+    }
+
+    .item-list a:hover{
+        color: #2e2e2e;
+        background-color: #efefef
+    }
+	
+    .item-list a{
+        transition: all .2s linear;
+        padding: 2%;
+        text-decoration: none;
+        display: block;
+    }
+
+    hr{
+        margin-bottom: 20px;
+    }
+
+    .error-response{
+        background-color: #B03A2E;
+        text-align: center;
+    }
+
+    .error-response h4{
+        /*padding: 3% 0;*/
+    }
+
+    .centered{
+        text-align: center;
+    }
+
+
+    .client-name{
+        font-size: 2em;
+    }
+
+    .client{
+        border-bottom: 2px solid #00f;
+    }
+	
+	paper-button {
+		margin: 3%;
+		font-family: 'Roboto', 'Noto', sans-serif;
+		font-weight: normal;
+		font-size: 14px;
+		-webkit-font-smoothing: antialiased;
+	}
+	
+	paper-button.primary{
+		color: #FFF;
+		background-color: [[authColor]];
+	}
+	
+	paper-button.primary:hover {
+		background-color: #3498DB;
+	}
+	
+	
+	
+	paper-button.indigo {
+		background-color: var(--paper-indigo-500);
+		color: white;
+		--paper-button-raised-keyboard-focus: {
+		background-color: var(--paper-pink-a200) !important;
+		color: white !important;
+		};
+	}
+	
+	paper-button.indigo:hover {
+		background-color: var(--paper-indigo-400);
+	}
+	
+	paper-button.pink {
+		color: var(--paper-pink-a200);
+		--paper-button-ink-color: var(--paper-pink-a200);
+	}
+	
+	paper-button.pink:hover {
+		background-color: var(--paper-pink-100);
+	}
+	
+	paper-button.indigo[active] {
+		background-color: var(--paper-green-500);
+	}
+	
+	paper-button.green {
+		background-color: var(--paper-green-500);
+		color: white;
+	}
+	
+	paper-button.green[active] {
+		background-color: var(--paper-red-500);
+	}
+	
+	@keyframes spin {
+		0% { transform: rotate(0deg); }
+		100% { transform: rotate(360deg); }
+	}
+	
+	.spinner{
+		width: 120px;
+		height: 120px;
+		animation: spin 2s linear infinite;
+	}
+	
+	.spinner:hover{
+		color:#000; 
+	}
+    </style>
+	<div class="centered">
+		<h2>Welcome to PolyHub <span class="client">[[loggedInUser]]</span>!</h2>
+	</div>
+	<div id="container">
+		<div class="loginScreen">
+			<div class="centered">
+				<h3>Enter Credentials</h3>
+			</div>
+			<paper-input id="username" placeholder="Username" name="username" value="{{username::input}}">
+				<iron-icon icon="icons:account-circle" slot="prefix"></iron-icon>
+			</paper-input>
+			<paper-input id="token" placeholder="Token" name="token" value="{{token::input}}">
+				<iron-icon icon="icons:lock-outline" slot="prefix"></iron-icon>
+			</paper-input>
+			
+		<div class="centered">
+			<paper-button raised on-tap="getMyRepo" class="primary">Submit</paper-button>
+			<paper-button raised on-tap="clearRepoList" class="primary">Clear</paper-button>
+			<!--<paper-button toggles raised class="pink">Pink</paper-button>
+			<paper-button toggles raised class="green">Green</paper-button>-->
+		</div>
+			<div class="error-response" id="error">
+				<h3>[[responseError]]</h3>
+			</div>
+		</div>
+		<div class="resultScreen" id="resultScreen">
+		<template is="dom-if" if="{{loading}}">
+			<iron-icon icon="icons:all-out" class="spinner"></iron-icon>
+			</template>
+		<!-- <hr id="results-line"> -->
+			<template is="dom-if" if="[[repos]]" restamp="false">
+				<div class="centered">
+					<img src="[[ownerData.avatar_url]]"/>
+					<h2 class="client-name">[[ownerData.login]]</h2>
+				</div>
+				<p>Here are a list of your repositories:</p>
+				<hr>
+				<template is="dom-repeat" items="[[repos]]">
+					<ul class="item-list">
+					  <li><a href="{{item.html_url}}">{{item.name}}</a></li>
+					</ul>
+				</template>
+			</template>
+	<iron-ajax
+		id="requestRepos"
+		url="https://api.github.com/user/repos?username={{username}}&access_token={{token}}"
+		params='{"type": "all"}'
+		handle-as="json"
+		loading="{{loading}}"
+		on-response="handleResponse"
+		on-error="handleErrorResponse"
+		debounce-duration="300"></iron-ajax>
+		</div>
+	</div>
+  </template>
+
+  <script>
+
+        Polymer({
+            is: 'githubpoly-github',
+            properties: {
+                repos: {
+                    type: Array
+                },
+		   loggedInUser: {
+			type: String,
+		   },
+		   ownerData: {
+			type: Array
+		   },
+		   responseError: {
+			type: String
+		   },   
+		   resultScreen: {
+			type: String,
+			value: 'block',
+		   },
+		  authColor: {
+			type: String,
+			value: '#2874A6'
+		  }
+            },
+		_getParams:function() {
+			return ('"type":"all"');
+		},
+		getMyRepo: function () {
+			this.loading = true;
+			this.resultScreen = 'block';
+			this.async(function() {
+				this.$.requestRepos.generateRequest();
+			},  2000);
+            },
+		clearRepoList: function () {
+			this.resultScreen = 'none';
+			console.log(this.$.resultScreen);
+            },
+            handleResponse: function (data) {
+			this.resultScreen = 'block';
+			this.responseError = '';
+			this.repos = data.detail.response;
+			this.ownerData = data.detail.response[0].owner;
+			this.loggedInUser = this.ownerData.login;
+			this.authColor =  '#52BE80';
+			this.loading = false;
+            },
+		handleErrorResponse: function(event){
+			this.loading = false;
+			this.responseError = event.detail.request.xhr.response.message;
+			this.authColor =  '#B03A2E';
+		}
+        });
+    </script>
+<!--
+	<script>
+    class GithubpolyGithub extends Polymer.Element {
+      static get is() { return 'githubpoly-github'; }
+      static get properties() {
+        return {
+          prop1: {
+            type: String,
+            value: 'polyhub'
+          },
+		prop2: {
+            type: String,
+            value: 'github repositories'
+          }
+        };
+      }
+	 }
+
+    window.customElements.define(GithubpolyGithub.is, GithubpolyGithub);
+  </script>
+  -->
+</dom-module>
